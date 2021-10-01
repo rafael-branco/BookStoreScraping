@@ -3,6 +3,9 @@ import bs4
 from bs4 import BeautifulSoup
 from decimal import Decimal
 import re
+import json
+import mysql.connect
+
 
 
 def getNumberOfStars(arr):
@@ -38,6 +41,21 @@ CREATE TABLE IF NOT EXISTS books (
 );
 '''
 
+# Opening JSON file
+f = open('mysql.json', )
+
+# returns JSON object as
+# a dictionary
+data = json.load(f)
+
+# Iterating through the json
+# list
+
+print(data['mysql_info'][0]['host'])
+
+exit(1)
+
+
 for i in range(1, 2):
     main_re = requests.get(main_url + "catalogue/page-" + str(i) + ".html")
     soup = BeautifulSoup(main_re.text, "html.parser")
@@ -46,22 +64,24 @@ for i in range(1, 2):
         re_book = requests.get(main_url + "catalogue/" + item['href'])
         print(main_url + "catalogue/" + item['href'])
         soup = BeautifulSoup(re_book.text, "html.parser")
-        #print(soup)
+
         title = soup.select_one("div.col-sm-6.product_main h1").text
         category = soup.select_one("ul.breadcrumb li:nth-child(2) a").text
         price = soup.select_one(".product_main p.price_color").text
-        price = Decimal(price[1:])
+        price = Decimal(price[2:])
         stars = soup.select_one("p.star-rating")
         stars = getNumberOfStars(stars['class'])
-        print(stars)
         prod_description = soup.select_one("div#product_description + p").text
         upc = soup.select_one("#content_inner table.table.table-striped tr:nth-child(1) td").text
         product_type = soup.select_one("#content_inner table.table.table-striped tr:nth-child(2) td").text
         price_excl_tax = soup.select_one("#content_inner table.table.table-striped tr:nth-child(3) td").text
+        price_excl_tax = Decimal(price_excl_tax[2:])
         price_incl_tax = soup.select_one("#content_inner table.table.table-striped tr:nth-child(4) td").text
+        price_incl_tax = Decimal(price_incl_tax[2:])
         tax = soup.select_one("#content_inner table.table.table-striped tr:nth-child(5) td").text
+        tax = Decimal(tax[2:])
         availability = soup.select_one("#content_inner table.table.table-striped tr:nth-child(6) td").text
         availability = int(re.search(r'\d+', availability).group())
-        numb_reviews = soup.select_one("#content_inner table.table.table-striped tr:nth-child(7) td").text
+        numb_reviews = int(soup.select_one("#content_inner table.table.table-striped tr:nth-child(7) td").text)
 
     main_re.close()
