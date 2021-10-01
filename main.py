@@ -29,9 +29,9 @@ mydb = mysql.connector.connect(
 mycursor = mydb.cursor()
 
 
-id_counter = 161
+id_counter = 1
 
-for i in range(9, 51):
+for i in range(1, 51):
     main_re = requests.get(main_url + "catalogue/page-" + str(i) + ".html")
     soup = BeautifulSoup(main_re.text, "html.parser")
     books = soup.select("section ol li div.image_container a")
