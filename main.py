@@ -4,9 +4,7 @@ from bs4 import BeautifulSoup
 from decimal import Decimal
 import re
 import json
-import mysql.connect
-
-
+import mysql.connector
 
 def getNumberOfStars(arr):
     list = [["One", 1], ["Two", 2], ["Three", 3], ["Four", 4], ["Five", 5]]
@@ -17,52 +15,29 @@ def getNumberOfStars(arr):
     return 0
 
 main_url = "https://books.toscrape.com/"
-id = 1
 
-# DATABASE
-
-'''
-CREATE DATABASE IF NOT EXISTS book_store;
-use book_store;
-CREATE TABLE IF NOT EXISTS books (
-	id INT PRIMARY KEY NOT NULL,
-    title VARCHAR(300) NOT NULL,
-    category VARCHAR(100) NOT NULL,
-    price DOUBLE NOT NULL,
-    stars int,
-    prod_description LONGTEXT,
-    upc VARCHAR(100),
-    product_type VARCHAR(100),
-    price_excl_tax DOUBLE,
-    price_incl_tax DOUBLE,
-    tax DOUBLE,
-    availability INT NOT NULL,
-    numb_reviews INT
-);
-'''
-
-# Opening JSON file
 f = open('mysql.json', )
-
-# returns JSON object as
-# a dictionary
 data = json.load(f)
 
-# Iterating through the json
-# list
+mydb = mysql.connector.connect(
+    host=data['mysql_info'][0]['host'],
+    user=data['mysql_info'][0]['user'],
+    password=data['mysql_info'][0]['password'],
+    database=data['mysql_info'][0]['database']
+)
 
-print(data['mysql_info'][0]['host'])
-
-exit(1)
+mycursor = mydb.cursor()
 
 
-for i in range(1, 2):
+id_counter = 161
+
+for i in range(9, 51):
     main_re = requests.get(main_url + "catalogue/page-" + str(i) + ".html")
     soup = BeautifulSoup(main_re.text, "html.parser")
     books = soup.select("section ol li div.image_container a")
     for item in books:
         re_book = requests.get(main_url + "catalogue/" + item['href'])
-        print(main_url + "catalogue/" + item['href'])
+        #print(main_url + "catalogue/" + item['href'])
         soup = BeautifulSoup(re_book.text, "html.parser")
 
         title = soup.select_one("div.col-sm-6.product_main h1").text
@@ -71,7 +46,10 @@ for i in range(1, 2):
         price = Decimal(price[2:])
         stars = soup.select_one("p.star-rating")
         stars = getNumberOfStars(stars['class'])
-        prod_description = soup.select_one("div#product_description + p").text
+        try:
+            prod_description = soup.select_one("div#product_description + p").text
+        except:
+            prod_description = "None"
         upc = soup.select_one("#content_inner table.table.table-striped tr:nth-child(1) td").text
         product_type = soup.select_one("#content_inner table.table.table-striped tr:nth-child(2) td").text
         price_excl_tax = soup.select_one("#content_inner table.table.table-striped tr:nth-child(3) td").text
@@ -84,4 +62,12 @@ for i in range(1, 2):
         availability = int(re.search(r'\d+', availability).group())
         numb_reviews = int(soup.select_one("#content_inner table.table.table-striped tr:nth-child(7) td").text)
 
+        sql = "INSERT INTO books (id, title, category, price, stars, prod_description, upc, product_type, price_excl_tax, price_incl_tax, tax, availability, numb_reviews) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+        val = (id_counter, title, category, price, stars, prod_description, upc, product_type, price_excl_tax, price_incl_tax, tax, availability, numb_reviews)
+        mycursor.execute(sql, val)
+        mydb.commit()
+        print(mycursor.rowcount, "record inserted.")
+        id_counter += 1
     main_re.close()
+
+mydb.close()
