@@ -50,6 +50,7 @@ for i in range(1, 51):
             prod_description = soup.select_one("div#product_description + p").text
         except:
             prod_description = "None"
+
         upc = soup.select_one("#content_inner table.table.table-striped tr:nth-child(1) td").text
         product_type = soup.select_one("#content_inner table.table.table-striped tr:nth-child(2) td").text
         price_excl_tax = soup.select_one("#content_inner table.table.table-striped tr:nth-child(3) td").text
